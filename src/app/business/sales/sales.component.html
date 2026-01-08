@@ -1,0 +1,130 @@
+<div class="flex flex-col lg:flex-row gap-6 mx-auto mt-10">
+    <!-- TABLE CARD (80%) -->
+    <div class="w-full lg:w-3/5 bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
+      <!-- Header -->
+      <div
+        class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <h2 class="text-xl font-semibold text-gray-800">Ventas</h2>
+  
+        <!-- Filter Buttons -->
+        <div class="flex space-x-2">
+          <button
+            class="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-600 transition"
+            (click)="filterStatus('all')"
+          >
+            Todas
+          </button>
+          <button
+            class="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-600 transition"
+            (click)="filterStatus('abierta')"
+          >
+            Abiertas
+          </button>
+          <button
+            class="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-600 transition"
+            (click)="filterStatus('cerrada')"
+          >
+            Cerradas
+          </button>
+          <button
+            class="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-600 transition"
+            (click)="filterStatus('cancelada')"
+          >
+            Canceladas
+          </button>
+        </div>
+      </div>
+  
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left border-collapse">
+          <thead class="bg-gray-100 text-gray-700 uppercase text-sm font-semibold">
+            <tr>
+              <th class="px-6 py-3">Mesa</th>
+              <th class="px-6 py-3">Estado</th>
+              <th class="px-6 py-3">Monto</th>
+              <th class="px-6 py-3">Fecha de creación</th>
+              <th class="px-6 py-3 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 text-gray-800">
+            <tr
+              *ngFor="let sale of filteredSales"
+              class="hover:bg-gray-50 transition-colors"
+            >
+              <td class="px-6 py-4 font-medium">#{{ sale.tableNumber }}</td>
+              <td class="px-6 py-4">
+                <span
+                  [ngClass]="{
+                    'text-green-600 font-semibold': sale.status === 'abierta',
+                    'text-red-600 font-semibold': sale.status === 'cerrada',
+                    'text-yellow-600 font-semibold': sale.status === 'cancelada'
+                  }"
+                >
+                  {{ sale.status | titlecase }}
+                </span>
+              </td>
+              <td class="px-6 py-4">{{ getSaleTotal(sale) }}</td> 
+              <td class="px-6 py-4">{{ sale.createdAt }}</td>
+              <td class="px-6 py-4 text-center">
+                <button
+                  class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition"
+                  (click)="navegateToSaleDetails(sale.id)"
+                >
+                  Ver
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+  
+      <div
+        class="px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600"
+      >
+        Mostrando {{ filteredSales.length }} Ventas
+      </div>
+    </div>
+  
+    <!-- FORM CARD (20%) -->
+    <div
+      class="w-full lg:w-2/5 bg-white rounded-2xl shadow-md border border-gray-200 p-6"
+    >
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">Nueva venta</h3>
+  
+      <form class="space-y-4" (ngSubmit)="addSale()" #mesaForm="ngForm">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Número de mesa</label>
+          <input
+            type="number"
+            [(ngModel)]="newSale.tableNumber"
+            name="id"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Ej: 5"
+            required
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Apodo de cliente</label>
+          <input
+            type="string"
+            [(ngModel)]="newSale.customerNickname"
+            name="id"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Ej: Carla"
+            required
+          />
+        </div>
+  
+        <button
+          type="submit"
+          class="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition"
+        >
+          Guardar
+        </button>
+      </form>
+    </div>
+  </div>
+  
