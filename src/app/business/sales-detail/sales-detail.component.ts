@@ -23,6 +23,7 @@ export class SalesDetailComponent {
 
   sale: Sale = {
     tableNumber: 0,
+    isDelivery: false,
     clientId: '',
     status: '',
     products: [],
@@ -52,7 +53,6 @@ export class SalesDetailComponent {
       this.loading = false;
       if (this.sale?.products) {
         this.saleProducts = this.sale.products;
-        console.log('this.sale.products', this.sale.products);
       }
     });
   }
@@ -66,10 +66,8 @@ export class SalesDetailComponent {
 
   commitProducts(): void {
     if (this.pendingProducts.length === 0) return;
-    console.log('Products added:', this.pendingProducts);
     try {
       this.pendingProducts.forEach((pending) => {
-        console.log('pending: ', pending);
         this.salesService
           .addProductToSale(pending.id ?? 0, this.saleId!, pending.quantity)
           .subscribe(() => {
@@ -128,7 +126,7 @@ export class SalesDetailComponent {
   }
 
   navigateToSales() {
-    this.router.navigate(['/sales']);
+    this.router.navigate(['/ventas']);
   }
 
   pendingProductsTotal(): number {

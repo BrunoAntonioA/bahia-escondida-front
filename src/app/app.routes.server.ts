@@ -7,29 +7,17 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
-    path: 'dashboard',
+    path: 'ventas',
     renderMode: RenderMode.Prerender,
   },
   {
-    path: 'tables',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    path: 'sales',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    path: 'products',
+    path: 'productos',
     renderMode: RenderMode.Prerender,
   },
 
   // 🔴 Dynamic routes → server render ONLY
   {
-    path: 'tables/:id',
-    renderMode: RenderMode.Server,
-  },
-  {
-    path: 'sales/:id',
+    path: 'ventas/:id',
     renderMode: RenderMode.Server,
   },
 

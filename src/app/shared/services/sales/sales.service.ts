@@ -33,9 +33,15 @@ export class SalesService {
     });
   }
 
-  createSale(tableNumber: number): Observable<any> {
+  createSale(
+    tableNumber: number,
+    isDelivery: boolean,
+    customerNickname: string
+  ): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}`, {
       tableNumber,
+      isDelivery,
+      customerNickname,
       clientId: this.clientId,
       status: 'abierta',
     });
@@ -43,5 +49,9 @@ export class SalesService {
 
   closeSale(saleId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/close/${saleId}`, {});
+  }
+
+  deleteSale(saleNumber: number): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/${saleNumber}`);
   }
 }

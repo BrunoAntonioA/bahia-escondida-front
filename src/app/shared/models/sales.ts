@@ -1,7 +1,8 @@
 export interface Sale {
   id?: number;
-  tableNumber: number;
   clientId: string;
+  isDelivery: boolean;
+  tableNumber?: number | null;
   customerNickname?: string;
   partySize?: number;
   status: string;

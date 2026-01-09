@@ -12,38 +12,26 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/layout/layout.component'),
     children: [
       {
-        path: 'dashboard',
-        loadComponent: () => DashboardComponent,
-      },
-      {
-        path: 'tables',
-        loadComponent: () => TablesComponent,
-      },
-      {
-        path: 'tables/:id',
-        loadComponent: () => TableDetailComponent,
-      },
-      {
-        path: 'sales',
+        path: 'ventas',
         loadComponent: () => SalesComponent,
       },
       {
-        path: 'products',
+        path: 'productos',
         loadComponent: () => ProductsComponent,
       },
       {
-        path: 'sales/:id',
+        path: 'ventas/:id',
         loadComponent: () => SalesDetailComponent,
       },
       {
         path: '',
-        redirectTo: 'dashboard',
+        redirectTo: 'ventas',
         pathMatch: 'full',
       },
     ],
   },
   {
     path: '**',
-    redirectTo: 'dashboard',
+    redirectTo: 'ventas',
   },
 ];
