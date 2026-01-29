@@ -11,14 +11,22 @@
             (click)="printSale()"
             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition"
           >
-            Imprimir sale
+            Imprimir Venta
           </button>
           <button
-            (click)="closeTable()"
-            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+            (click)="printKitchen()"
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition"
           >
-            Cerrar venta
+            Imprimir Comanda
           </button>
+          <button
+  (click)="openCloseModal()"
+  class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+>
+  Cerrar venta
+</button>
+
+
         </div>
       </div>
   
@@ -182,4 +190,64 @@
   
     </div>
   </div>
+
+  <!-- CLOSE SALE MODAL -->
+<div
+  *ngIf="showCloseModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+      Cerrar venta
+    </h3>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">
+          Efectivo
+        </label>
+        <input
+          type="number"
+          [(ngModel)]="payment.efectivo"
+          class="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">
+          Tarjeta
+        </label>
+        <input
+          type="number"
+          [(ngModel)]="payment.tarjeta"
+          class="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div class="text-right text-sm text-gray-600">
+        Total venta:
+        <span class="font-semibold">
+          {{ totalProductsPrice() }}
+        </span>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 mt-6">
+      <button
+        (click)="cancelCloseSale()"
+        class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+      >
+        Cancelar
+      </button>
+
+      <button
+        (click)="confirmCloseSale()"
+        class="px-4 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white"
+      >
+        Confirmar cierre
+      </button>
+    </div>
+  </div>
+</div>
+
   

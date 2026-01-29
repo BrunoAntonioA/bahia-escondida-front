@@ -1,0 +1,20 @@
+import { Injectable } from '@angular/core';
+import { environment } from '../../../../enviroments/enviroment';
+import { HttpClient } from '@angular/common/http'
+import { Observable } from 'rxjs';
+import { Payment } from '../../models/payments';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PaymentsService {
+  private apiUrl = `${environment.apiUrl}/payments`; // backend endpoint
+  private clientId = 'bahia-escondida';
+
+  constructor(private http: HttpClient) {}
+
+  create(cashPaid: number, cardPaid: number, saleId: number): Observable<Payment> {
+    return this.http.post<Payment>(`${this.apiUrl}`, {cashPaid, cardPaid, saleId});
+  }
+
+}

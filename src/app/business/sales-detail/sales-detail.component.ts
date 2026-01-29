@@ -6,6 +6,9 @@ import { FormsModule } from '@angular/forms';
 import { Sale } from '../../shared/models/sales';
 import { ProductsService } from '../../shared/services/products.service';
 import { SalesService } from '../../shared/services/sales/sales.service';
+import { PaymentsService } from '../../shared/services/payments/payments.service';
+import { PrinterService } from '../../shared/services/printer/printer.service';
+import { switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-sales-detail',
@@ -20,6 +23,12 @@ export class SalesDetailComponent {
   pendingProducts: SaleProduct[] = [];
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
+  showCloseModal = false;
+
+  payment = {
+    efectivo: 0,
+    tarjeta: 0,
+  };
 
   sale: Sale = {
     tableNumber: 0,
@@ -36,7 +45,9 @@ export class SalesDetailComponent {
     private route: ActivatedRoute,
     private router: Router,
     private productsService: ProductsService,
-    private salesService: SalesService
+    private salesService: SalesService,
+    private paymentsService: PaymentsService,
+    private printerService: PrinterService
   ) {}
 
   ngOnInit(): void {
@@ -142,110 +153,286 @@ export class SalesDetailComponent {
 
   printSale() {
     const sale = this.sale;
+
     const subtotal = sale.products.reduce(
       (sum: number, p: any) => sum + p.price * p.quantity,
       0
     );
 
-    const tip = Math.round(subtotal * 0.1); // 10% tip
+    const tip = Math.round(subtotal * 0.1);
     const total = subtotal + tip;
 
     const productsHtml = sale.products
       .map(
         (p: any) => `
-          <div class="row">
-            <span>${p.name} x${p.quantity}</span>
-            <span>$${(p.price * p.quantity).toLocaleString('es-CL')}</span>
-          </div>
-        `
+        <div class="row">
+          <span class="name">${p.name} x${p.quantity}</span>
+          <span class="price">$${(p.price * p.quantity).toLocaleString(
+            'es-CL'
+          )}</span>
+        </div>
+      `
       )
       .join('');
 
     const html = `
-      <html>
-        <head>
-          <title>Receipt</title>
-          <style>
-            body {
-              width: 80mm;
-              font-family: monospace;
-              font-size: 12px;
-              margin: 0;
-            }
-  
-            .center {
-              text-align: center;
-            }
-  
-            .line {
-              border-top: 1px dashed #000;
-              margin: 6px 0;
-            }
-  
-            .row {
-              display: flex;
-              justify-content: space-between;
-              margin: 2px 0;
-            }
-  
-            .total {
-              font-size: 14px;
-              font-weight: bold;
-            }
-  
-            .muted {
-              opacity: 0.8;
-            }
-          </style>
-        </head>
-  
-        <body onload="window.print(); window.close();">
-          <h2 class="center">${sale.clientId.toUpperCase()}</h2>
-  
-          <div class="line"></div>
-  
-          <p>Mesa: ${sale.tableNumber}</p>
-          <p>Fecha: ${sale.createdAt}</p>
-          <p>Venta #: ${sale.id}</p>
-  
-          <div class="line"></div>
-  
-          ${productsHtml}
-  
-          <div class="line"></div>
-  
-          <div class="row muted">
-            <span>Subtotal</span>
-            <span>$${subtotal.toLocaleString('es-CL')}</span>
-          </div>
-  
-          <div class="row muted">
-            <span>Propina (10%)</span>
-            <span>$${tip.toLocaleString('es-CL')}</span>
-          </div>
-  
-          <div class="line"></div>
-  
-          <div class="row total">
-            <span>TOTAL</span>
-            <span>$${total.toLocaleString('es-CL')}</span>
-          </div>
-  
-          <div class="line"></div>
-  
-          <p class="center">Gracias por su compra</p>
-        </body>
-      </html>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8" />
+      <title>Receipt</title>
+      <style>
+        @page {
+          size: 50mm auto;
+          margin: 0;
+        }
+
+        html, body {
+          width: 50mm;
+          margin: 0;
+          padding: 0;
+          font-family: monospace;
+          font-size: 14px;
+          height: auto;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        .center {
+          text-align: center;
+        }
+
+        .line {
+          border-top: 1px dashed #000;
+          margin: 6px 0;
+        }
+
+        .row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin: 2px 0;
+          gap: 6px;
+        }
+
+        .name {
+          max-width: 38mm;
+          word-wrap: break-word;
+        }
+
+        .price {
+          white-space: nowrap;
+        }
+
+        .total {
+          font-size: 14px;
+          font-weight: bold;
+        }
+
+        .muted {
+          opacity: 0.8;
+        }
+      </style>
+    </head>
+
+    <body onload="window.print(); window.close();">
+      <div class="center">
+        <strong>${sale.clientId.toUpperCase()}</strong>
+      </div>
+
+      <div class="line"></div>
+
+      <div>${
+        sale.tableNumber !== 0
+          ? 'Mesa: ' + sale.tableNumber
+          : 'Cliente: ' + sale.customerNickname
+      }</div>
+      <div>Fecha: ${sale.createdAt}</div>
+      <div>Venta #: ${sale.id}</div>
+
+      <div class="line"></div>
+
+      ${productsHtml}
+
+      <div class="line"></div>
+
+      <div class="row">
+        <span>Subtotal</span>
+        <span>$${subtotal.toLocaleString('es-CL')}</span>
+      </div>
+
+      <div class="row">
+        <span>Propina (10%)</span>
+        <span>$${tip.toLocaleString('es-CL')}</span>
+      </div>
+
+      <div class="line"></div>
+
+      <div class="row total">
+        <span>TOTAL</span>
+        <span>$${total.toLocaleString('es-CL')}</span>
+      </div>
+
+      <div class="line"></div>
+
+      <div class="center">
+        Gracias por su compra
+      </div>
+    </body>
+    </html>
     `;
 
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    const printWindow = window.open('', '_blank', 'width=380,height=600');
     printWindow!.document.write(html);
     printWindow!.document.close();
+  }
+
+  printKitchen() {
+    const sale = this.sale;
+
+    const headerTitle =
+      sale.tableNumber !== 0
+        ? `MESA ${sale.tableNumber}`
+        : `PARA LLEVAR: ${sale.customerNickname || sale.clientId}`;
+
+    const productsByCategory = sale.products.reduce((acc: any, p: any) => {
+      if (!acc[p.category]) acc[p.category] = [];
+      acc[p.category].push(p);
+      return acc;
+    }, {});
+
+    const kitchenProductsHtml = Object.entries(productsByCategory)
+      .map(
+        ([category, products]: any) => `
+      <div class="ticket">
+        <div class="header">${headerTitle}</div>
+        <div class="category">${category.toUpperCase()}</div>
+
+        ${products
+          .map(
+            (p: any) => `
+              <div class="product">
+                <span class="qty">x${p.quantity}</span>
+                <span class="name">${p.name}</span>
+              </div>
+            `
+          )
+          .join('')}
+      </div>
+
+      <div class="cut"></div>
+    `
+      )
+      .join('');
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8" />
+      <style>
+        @page {
+          size: 50mm auto;
+          margin: 0;
+        }
+
+        body {
+          width: 50mm;
+          margin: 0;
+          padding: 4px;
+          font-family: monospace;
+          font-size: 20px;
+        }
+
+        .ticket {
+          margin-bottom: 10px;
+        }
+
+        .header {
+          text-align: center;
+          font-size: 22px;
+          font-weight: bold;
+          margin-bottom: 4px;
+        }
+
+        .category {
+          text-align: center;
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 6px;
+        }
+
+        .product {
+          display: flex;
+          gap: 6px;
+          margin: 4px 0;
+        }
+
+        .qty {
+          font-weight: bold;
+        }
+
+        .name {
+          word-break: break-word;
+        }
+
+        .cut {
+          border-top: 2px dashed #000;
+          margin: 10px 0;
+        }
+      </style>
+    </head>
+
+    <body onload="window.print(); window.close();">
+      ${kitchenProductsHtml}
+    </body>
+    </html>
+  `;
+
+    const printWindow = window.open('', '_blank', 'width=380,height=600');
+    printWindow!.document.write(html);
+    printWindow!.document.close();
+  }
+
+  openCloseModal() {
+    this.payment = { efectivo: 0, tarjeta: 0 };
+    this.showCloseModal = true;
+  }
+
+  confirmCloseSale() {
+    const total = this.totalProductsPrice();
+    const paid = this.payment.efectivo + this.payment.tarjeta;
+
+    if (paid < total) {
+      alert('El monto pagado es menor al total');
+      return;
+    }
+
+    this.paymentsService
+      .create(this.payment.efectivo, this.payment.tarjeta, this.saleId ?? 0)
+      .pipe(
+        switchMap(() => this.salesService.closeSale(this.saleId ?? 0)),
+        tap(() => {
+          this.showCloseModal = false;
+          this.navigateToSales();
+        })
+      )
+      .subscribe({
+        error: (err) => {
+          console.error(err);
+        },
+      });
   }
 
   closeTable() {
     this.salesService.closeSale(this.saleId!).subscribe(() => {
       this.navigateToSales();
     });
+  }
+
+  cancelCloseSale() {
+    this.showCloseModal = false;
   }
 }
