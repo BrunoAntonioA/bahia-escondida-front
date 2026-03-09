@@ -1,0 +1,73 @@
+<div class="p-6 space-y-6">
+  <div class="p-6 space-y-6">
+    <!-- Date filter -->
+    <div class="flex flex-col md:flex-row gap-4 items-end">
+      <div>
+        <label class="block text-sm text-gray-500">Desde</label>
+        <input
+          type="date"
+          [(ngModel)]="startDate"
+          class="mt-1 p-2 border rounded-md"
+        />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-500">Hasta</label>
+        <input
+          type="date"
+          [(ngModel)]="endDate"
+          class="mt-1 p-2 border rounded-md"
+        />
+      </div>
+      <button
+        (click)="filterByDate()"
+        class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+      >
+        Aplicar
+      </button>
+    </div>
+
+    <!-- KPIs and charts follow... -->
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl shadow p-4">
+        <p class="text-sm text-gray-500">Ventas</p>
+        <p class="text-2xl font-bold">{{ totalSales }}</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-4">
+        <p class="text-sm text-gray-500">Ingresos</p>
+        <p class="text-2xl font-bold">${{ totalRevenue | number: "1.0-0" }}</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-4">
+        <p class="text-sm text-gray-500">Ticket Promedio</p>
+        <p class="text-2xl font-bold">${{ avgTicket | number: "1.0-0" }}</p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-4">
+        <p class="text-sm text-gray-500">Delivery / Mesa</p>
+        <p class="text-lg font-semibold">
+          {{ deliveryCount }} / {{ tableCount }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="font-semibold mb-2">Ventas por día</h3>
+        <div class="w-full h-60 md:h-72">
+          <canvas id="salesByDayChart"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-4">
+        <h3 class="font-semibold mb-2">Ingresos por categoría</h3>
+        <div class="w-full h-60 md:h-72">
+          <canvas id="revenueByCategoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

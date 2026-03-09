@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Sale } from '../../models/sales';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../enviroments/enviroment';
+import { map } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -17,14 +18,31 @@ export class SalesService {
     return this.http.get<Sale>(`${this.apiUrl}/${id}`);
   }
 
-  getSalesByClientId(): Observable<Sale[]> {
-    return this.http.get<Sale[]>(`${this.apiUrl}/client/${this.clientId}`);
+  getSalesByClientId(filter = 'all'): Observable<Sale[]> {
+    return this.http.get<Sale[]>(`${this.apiUrl}/client/${this.clientId}`).pipe(
+      map((sales: Sale[]) => {
+        switch (filter) {
+          case 'isDelivery':
+            return sales.filter((s) => s.isDelivery);
+
+          case 'isTable':
+            return sales.filter((s) => !s.isDelivery);
+
+          case 'all':
+          case '':
+          case null:
+          case undefined:
+          default:
+            return sales;
+        }
+      }),
+    );
   }
 
   addProductToSale(
     productId: number,
     saleId: number,
-    quantity: number
+    quantity: number,
   ): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/add-product`, {
       productId,
@@ -36,7 +54,7 @@ export class SalesService {
   createSale(
     tableNumber: number,
     isDelivery: boolean,
-    customerNickname: string
+    customerNickname: string,
   ): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}`, {
       tableNumber,
@@ -53,5 +71,11 @@ export class SalesService {
 
   deleteSale(saleNumber: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${saleNumber}`);
+  }
+
+  deleteProductSale(saleId: number, productId: number) {
+    return this.http.delete<any>(
+      `${this.apiUrl}/${saleId}/product/${productId}`,
+    );
   }
 }

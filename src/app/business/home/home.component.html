@@ -1,0 +1,30 @@
+<div class="home-wrapper">
+  <div class="home-card">
+    <h1 class="title">Panel de Ventas</h1>
+    <p class="subtitle">Selecciona una acción</p>
+
+    <div *ngIf="message" class="alert">
+      {{ message }}
+    </div>
+
+    <div class="buttons">
+      <!-- Daily report -->
+      <button class="action-btn report" (click)="viewDailySalesReport()">
+        <span class="icon">📊</span>
+        <span class="text">
+          <strong>Reporte del día</strong>
+          <small>Ver resumen de ventas</small>
+        </span>
+      </button>
+
+      <!-- Print open sales -->
+      <button class="action-btn print" (click)="printOpenSales()">
+        <span class="icon">🖨️</span>
+        <span class="text">
+          <strong>Ventas abiertas</strong>
+          <small>Imprimir ventas en estado abierta</small>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

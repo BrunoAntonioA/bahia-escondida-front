@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../../enviroments/enviroment';
-import { HttpClient } from '@angular/common/http'
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Payment } from '../../models/payments';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PaymentsService {
   private apiUrl = `${environment.apiUrl}/payments`; // backend endpoint
@@ -13,8 +13,19 @@ export class PaymentsService {
 
   constructor(private http: HttpClient) {}
 
-  create(cashPaid: number, cardPaid: number, saleId: number): Observable<Payment> {
-    return this.http.post<Payment>(`${this.apiUrl}`, {cashPaid, cardPaid, saleId});
+  create(
+    cashPaid: number,
+    cardPaid: number,
+    transferPaid: number,
+    tipPaid: number,
+    saleId: number,
+  ): Observable<Payment> {
+    return this.http.post<Payment>(`${this.apiUrl}`, {
+      cashPaid,
+      cardPaid,
+      transferPaid,
+      tipPaid,
+      saleId,
+    });
   }
-
 }
