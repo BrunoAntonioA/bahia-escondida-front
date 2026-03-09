@@ -104,15 +104,38 @@
   <div class="w-full lg:w-2/5 bg-white rounded-2xl shadow-md border border-gray-200 p-6">
     <h3 class="text-lg font-semibold mb-4">Nueva venta</h3>
 
-    <form (ngSubmit)="addSale()" class="space-y-4">
-      <div class="flex justify-between items-center">
-        <span class="text-sm font-medium">Tipo de venta</span>
-        <button type="button" (click)="toggleDelivery()" class="relative inline-flex h-6 w-11 items-center rounded-full"
-          [class.bg-blue-600]="newSale.isDelivery" [class.bg-gray-300]="!newSale.isDelivery">
-          <span class="inline-block h-4 w-4 bg-white rounded-full transition" [class.translate-x-6]="newSale.isDelivery"
-            [class.translate-x-1]="!newSale.isDelivery"></span>
-        </button>
-      </div>
+    <form (ngSubmit)="addSale()" class="space-y-4"> 
+<div>
+  <span class="text-sm font-medium">Tipo de venta</span>
+
+  <div class="mt-2 flex bg-gray-100 rounded-lg p-1 w-fit">
+    <button
+      type="button"
+      (click)="newSale.isDelivery = false"
+      class="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md transition"
+      [class.bg-white]="!newSale.isDelivery"
+      [class.shadow]="!newSale.isDelivery"
+      [class.text-gray-900]="!newSale.isDelivery"
+      [class.text-gray-500]="newSale.isDelivery"
+    >
+      <img src="/toeat.png" class="w-5 h-5 object-contain" alt="Para servir" />
+      Para servir
+    </button>
+
+    <button
+      type="button"
+      (click)="newSale.isDelivery = true"
+      class="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md transition"
+      [class.bg-white]="newSale.isDelivery"
+      [class.shadow]="newSale.isDelivery"
+      [class.text-gray-900]="newSale.isDelivery"
+      [class.text-gray-500]="!newSale.isDelivery"
+    >
+      <img src="/togo.png" class="w-5 h-5 object-contain" alt="Para llevar" />
+      Para llevar
+    </button>
+  </div>
+</div>
 
       <p class="text-sm text-gray-500">
         {{ newSale.isDelivery ? 'Para llevar' : 'Para servir' }}
