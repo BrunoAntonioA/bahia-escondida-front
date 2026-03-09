@@ -15,9 +15,10 @@ export class ProductsComponent {
   products: Product[] = [];
   categories: string[] = ['Bebestible', 'Comida'];
 
-  // pagination config
   currentPage = 1;
   pageSize = 5;
+
+  modalOpen = false;
 
   newProduct: Product = {
     clientId: 'bahia-escondida',
@@ -38,7 +39,6 @@ export class ProductsComponent {
     });
   }
 
-  // derived data
   get totalPages(): number {
     return Math.ceil(this.products.length / this.pageSize);
   }
@@ -49,7 +49,6 @@ export class ProductsComponent {
     return this.products.slice(start, end);
   }
 
-  // range text
   get startItem(): number {
     return this.products.length === 0
       ? 0
@@ -61,7 +60,6 @@ export class ProductsComponent {
     return end > this.products.length ? this.products.length : end;
   }
 
-  // navigation
   goToPage(page: number) {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -80,6 +78,24 @@ export class ProductsComponent {
     }
   }
 
+  openModal() {
+    this.modalOpen = true;
+  }
+
+  closeModal() {
+    this.modalOpen = false;
+    this.resetForm();
+  }
+
+  resetForm() {
+    this.newProduct = {
+      clientId: 'bahia-escondida',
+      name: '',
+      category: '',
+      price: null as any,
+    };
+  }
+
   addProduct() {
     const productToCreate: Product = { ...this.newProduct };
 
@@ -87,12 +103,11 @@ export class ProductsComponent {
       next: (createdProduct) => {
         this.products.push(createdProduct);
 
-        this.newProduct = {
-          clientId: 'bahia-escondida',
-          name: '',
-          category: '',
-          price: null as any,
-        };
+        this.closeModal();
+
+        if (this.totalPages > 0) {
+          this.currentPage = this.totalPages;
+        }
       },
       error: (err) => {
         console.error('Error creating product:', err);
@@ -106,9 +121,13 @@ export class ProductsComponent {
     this.productService.deleteProduct(productId).subscribe({
       next: () => {
         this.products.splice(index, 1);
+
+        if (this.currentPage > this.totalPages && this.currentPage > 1) {
+          this.currentPage--;
+        }
       },
       error: (err) => {
-        console.error('Error creating product:', err);
+        console.error('Error deleting product:', err);
       },
     });
   }
