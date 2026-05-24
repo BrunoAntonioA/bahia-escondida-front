@@ -1,17 +1,23 @@
-<div class="flex flex-col lg:flex-row gap-6 mx-auto mt-10">
-  <!-- TABLE CARD (80%) -->
+<div class="mx-auto mt-10 max-w-6xl px-4">
   <div
-    class="w-full lg:w-3/5 bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200"
+    class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200"
   >
-    <!-- Header -->
     <div
-      class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between"
+      class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <h2 class="text-xl font-semibold text-gray-800">Productos del menú</h2>
+
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
+        (click)="openCreateModal()"
+      >
+        <span class="text-lg leading-none">+</span>
+        Nuevo producto
+      </button>
     </div>
 
-    <!-- Scrollable table container -->
-    <div class="max-h-[420px] overflow-y-auto overflow-x-auto">
+    <div class="max-h-[620px] overflow-y-auto overflow-x-auto">
       <table class="min-w-full border-collapse text-left">
         <thead
           class="bg-gray-100 text-gray-700 uppercase text-sm font-semibold sticky top-0 z-10"
@@ -19,101 +25,160 @@
           <tr>
             <th class="px-6 py-3">Producto</th>
             <th class="px-6 py-3">Categoría</th>
-            <th class="px-6 py-3">Precio</th>
+            <th class="px-6 py-3">Precio base</th>
+            <th class="px-6 py-3">Opciones</th>
             <th class="px-6 py-3 text-center">Acciones</th>
           </tr>
         </thead>
 
         <tbody class="divide-y divide-gray-200 text-gray-800">
-          <tr
-            *ngFor="let product of products; let i = index"
-            class="hover:bg-gray-50 transition-colors"
-          >
-            <td class="px-6 py-4 font-medium">{{ product.name }}</td>
-            <td class="px-6 py-4">{{ product.category }}</td>
-            <td class="px-6 py-4">
-              {{ product.price | currency : "USD" }}
-            </td>
-            <td class="px-6 py-4 text-center space-x-2">
-              <button
-                class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition"
-                (click)="deleteProduct(i, product.id)"
-              >
-                Eliminar
-              </button>
+          <ng-container *ngFor="let product of paginatedProducts">
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4">
+                <div class="font-medium text-gray-900">{{ product.name }}</div>
+                <div
+                  *ngIf="product.createdAt"
+                  class="text-xs text-gray-400 mt-1"
+                >
+                  Creado {{ product.createdAt | date : 'dd/MM/yyyy' }}
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                {{ product.category | categoryLabel }}
+              </td>
+
+              <td class="px-6 py-4 font-medium">
+                {{ formatPrice(product.price) }}
+              </td>
+
+              <td class="px-6 py-4">
+                <button
+                  *ngIf="hasOptions(product); else noOptions"
+                  type="button"
+                  class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  (click)="toggleOptions(product.id)"
+                >
+                  <svg
+                    class="w-4 h-4 transition-transform"
+                    [class.rotate-180]="isExpanded(product.id)"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="2"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                  {{ optionsCount(product) }} opción(es)
+                </button>
+
+                <ng-template #noOptions>
+                  <span class="text-sm text-gray-400">Sin opciones</span>
+                </ng-template>
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="flex flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition text-sm"
+                    (click)="openOptionsModal(product)"
+                  >
+                    + Opciones
+                  </button>
+                  <button
+                    type="button"
+                    class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition text-sm"
+                    (click)="openDeleteModal(product.id)"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr
+              *ngIf="hasOptions(product) && isExpanded(product.id)"
+              class="bg-blue-50/40"
+            >
+              <td colspan="5" class="px-6 py-4">
+                <div class="rounded-xl border border-blue-100 bg-white p-4">
+                  <div
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3"
+                  >
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      Opciones de {{ product.name }}
+                    </p>
+                    <button
+                      type="button"
+                      class="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      (click)="openOptionsModal(product)"
+                    >
+                      + Agregar más opciones
+                    </button>
+                  </div>
+
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    <div
+                      *ngFor="let option of product.options"
+                      class="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3"
+                    >
+                      <span class="text-sm font-medium text-gray-800">
+                        {{ option.name }}
+                      </span>
+                      <span class="shrink-0 text-sm font-semibold text-gray-700">
+                        {{ formatPrice(option.price) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+
+          <tr *ngIf="products.length === 0">
+            <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+              No hay productos. Agrega el primero con el botón de arriba.
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Footer -->
-    <div
-      class="px-6 py-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600"
-    >
-      Mostrando {{ products.length }} productos
-    </div>
-  </div>
-
-  <!-- FORM CARD (20%) -->
-  <div
-    class="w-full lg:w-2/5 bg-white rounded-2xl shadow-md border border-gray-200 p-6"
-  >
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">Nuevo producto</h3>
-
-    <form class="space-y-4" (ngSubmit)="addProduct()" #productForm="ngForm">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1"
-          >Nombre</label
-        >
-        <input
-          type="text"
-          [(ngModel)]="newProduct.name"
-          name="name"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Ej: Sandwich"
-          required
-        />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1"
-          >Categoría</label
-        >
-        <select
-          [(ngModel)]="newProduct.category"
-          name="category"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        >
-          <option value="">Seleccione una categoría</option>
-          <option *ngFor="let cat of categories" [value]="cat">
-            {{ cat }}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1"
-          >Precio</label
-        >
-        <input
-          type="number"
-          [(ngModel)]="newProduct.price"
-          name="price"
-          class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="0.00"
-          required
-        />
-      </div>
-
-      <button
-        type="submit"
-        [disabled]="productForm.invalid"
-        class="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition"
-      >
-        Guardar
-      </button>
-    </form>
+    <app-pagination
+      [currentPage]="currentPage"
+      [totalItems]="products.length"
+      [pageSize]="pageSize"
+      itemLabel="productos"
+      (pageChange)="onPageChange($event)"
+    />
   </div>
 </div>
+
+<app-product-form-modal
+  [open]="showCreateModal"
+  [product]="newProduct"
+  [saving]="savingProduct"
+  (submitForm)="addProduct($event)"
+  (cancel)="closeCreateModal()"
+/>
+
+<app-product-options-modal
+  [open]="showOptionsModal"
+  [productName]="selectedProductForOptions?.name ?? ''"
+  [saving]="savingOptions"
+  (submitOptions)="saveProductOptions($event)"
+  (cancel)="closeOptionsModal()"
+/>
+
+<app-confirm-delete-modal
+  [open]="productToDeleteId !== null"
+  (confirm)="onDeleteConfirmed()"
+  (cancel)="closeDeleteModal()"
+/>

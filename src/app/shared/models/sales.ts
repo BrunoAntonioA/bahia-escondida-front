@@ -1,6 +1,6 @@
 export interface Sale {
   id?: number;
-  clientId: string;
+  clientId?: string | number;
   isDelivery: boolean;
   tableNumber?: number | null;
   customerNickname?: string;

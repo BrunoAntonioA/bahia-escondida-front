@@ -5,11 +5,20 @@ import { SalesDetailComponent } from './business/sales-detail/sales-detail.compo
 import { HomeComponent } from './business/home/home.component';
 import { DailyReportComponent } from './business/reports/daily-report/daily-report.component';
 import { DeliverySalesComponent } from './business/delivery-sales/delivery-sales.component';
+import { LoginComponent } from './business/login/login.component';
+import { authGuard } from './auth/guards/auth.guard';
+import { loginGuard } from './auth/guards/login.guard';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    component: LoginComponent,
+    canActivate: [loginGuard],
+  },
+  {
     path: '',
     loadComponent: () => import('./shared/components/layout/layout.component'),
+    canActivate: [authGuard],
     children: [
       {
         path: 'ventas',
@@ -44,6 +53,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'ventas',
+    redirectTo: 'login',
   },
 ];

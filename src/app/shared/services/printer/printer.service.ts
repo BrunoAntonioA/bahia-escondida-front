@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { normalizeKitchenCategoryKey } from '../../constants/product-categories';
 
 type KitchenSection = 'COMIDA' | 'BEBESTIBLE';
 
@@ -74,7 +75,7 @@ export class PrinterService {
 
     return `
       <div class="receipt">
-        <div class="center"><strong>${sale.clientId.toUpperCase()}</strong></div>
+        <div class="center"><strong>${String(sale.clientId ?? '').toUpperCase()}</strong></div>
 
         <div class="line"></div>
 
@@ -260,7 +261,7 @@ export class PrinterService {
 
   private groupProductsByCategory(products: any[]) {
     return products.reduce((acc: any, p: any) => {
-      const key = p.category?.toUpperCase();
+      const key = normalizeKitchenCategoryKey(p.category);
       if (!key) return acc;
       acc[key] ??= [];
       acc[key].push(p);

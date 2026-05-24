@@ -4,6 +4,7 @@ import { SalesService } from '../../../shared/services/sales/sales.service';
 import { Sale } from '../../../shared/models/sales';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { getCategoryLabel } from '../../../shared/constants/product-categories';
 
 @Component({
   selector: 'app-daily-report',
@@ -69,7 +70,7 @@ export class DailyReportComponent implements OnInit {
         sum +
         sale.products.reduce(
           (pSum: number, p: any) => pSum + p.price * p.quantity,
-          0,
+          0
         )
       );
     }, 0);
@@ -127,8 +128,9 @@ export class DailyReportComponent implements OnInit {
     const revenueByCategory: Record<string, number> = {};
     this.filteredSales.forEach((sale) => {
       sale.products.forEach((p: any) => {
-        revenueByCategory[p.category] =
-          (revenueByCategory[p.category] || 0) + p.price * p.quantity;
+        const label = getCategoryLabel(p.category);
+        revenueByCategory[label] =
+          (revenueByCategory[label] || 0) + p.price * p.quantity;
       });
     });
 

@@ -9,8 +9,7 @@ import { map } from 'rxjs';
   providedIn: 'root',
 })
 export class SalesService {
-  private apiUrl = `${environment.apiUrl}/sales`; // backend endpoint
-  private clientId = 'bahia-escondida';
+  private apiUrl = `${environment.apiUrl}/sales`;
 
   constructor(private http: HttpClient) {}
 
@@ -19,7 +18,7 @@ export class SalesService {
   }
 
   getSalesByClientId(filter = 'all'): Observable<Sale[]> {
-    return this.http.get<Sale[]>(`${this.apiUrl}/client/${this.clientId}`).pipe(
+    return this.http.get<Sale[]>(this.apiUrl).pipe(
       map((sales: Sale[]) => {
         switch (filter) {
           case 'isDelivery':
@@ -56,12 +55,10 @@ export class SalesService {
     isDelivery: boolean,
     customerNickname: string,
   ): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}`, {
+    return this.http.post<any>(this.apiUrl, {
       tableNumber,
       isDelivery,
       customerNickname,
-      clientId: this.clientId,
-      status: 'abierta',
     });
   }
 

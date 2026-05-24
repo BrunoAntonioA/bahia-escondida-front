@@ -8,12 +8,13 @@ import { ProductsService } from '../../shared/services/products.service';
 import { SalesService } from '../../shared/services/sales/sales.service';
 import { PaymentsService } from '../../shared/services/payments/payments.service';
 import { PrinterService } from '../../shared/services/printer/printer.service';
+import { SaleAddProductsModalComponent } from '../../shared/components/sale-add-products-modal/sale-add-products-modal.component';
 import { switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-sales-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SaleAddProductsModalComponent],
   templateUrl: './sales-detail.component.html',
   styleUrl: './sales-detail.component.css',
 })
@@ -24,6 +25,7 @@ export class SalesDetailComponent {
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
   showCloseModal = false;
+  showAddProductsModal = false;
 
   payment = {
     efectivo: 0,
@@ -35,7 +37,6 @@ export class SalesDetailComponent {
   sale: Sale = {
     tableNumber: 0,
     isDelivery: false,
-    clientId: '',
     status: '',
     products: [],
   };
@@ -95,6 +96,7 @@ export class SalesDetailComponent {
           });
       });
       this.pendingProducts = [];
+      this.closeAddProductsModal();
     } catch (error) {
       console.log('Error adding products to sale:', error);
     }
@@ -123,7 +125,7 @@ export class SalesDetailComponent {
         price: product.price,
         category: product.category,
         quantity: 1,
-        clientId: 'bahia-escondida',
+        clientId: product.clientId,
       });
     }
   }
@@ -149,8 +151,24 @@ export class SalesDetailComponent {
     );
   }
 
+  onProductSearch(term: string): void {
+    this.searchTerm = term;
+    this.searchProducts();
+  }
+
+  openAddProductsModal(): void {
+    this.searchTerm = '';
+    this.filteredProducts = [...this.allProducts];
+    this.showAddProductsModal = true;
+  }
+
+  closeAddProductsModal(): void {
+    this.showAddProductsModal = false;
+    this.searchTerm = '';
+    this.filteredProducts = [...this.allProducts];
+  }
+
   navigateToSales() {
-    console.log('this.sale: ', this.sale);
     const path = this.sale.isDelivery ? '/delivery' : '/ventas';
     this.router.navigate([path]);
   }

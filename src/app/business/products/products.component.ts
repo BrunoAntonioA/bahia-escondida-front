@@ -1,114 +1,223 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Product } from '../../shared/models/product';
+import {
+  Product,
+  ProductOptionInput,
+  productHasOptions,
+} from '../../shared/models/product';
 import { ProductsService } from '../../shared/services/products.service';
+import { ConfirmDeleteModalComponent } from '../../shared/components/confirm-delete-modal/confirm-delete-modal.component';
+import { ProductFormModalComponent } from '../../shared/components/product-form-modal/product-form-modal.component';
+import { ProductOptionsModalComponent } from '../../shared/components/product-options-modal/product-options-modal.component';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { CategoryLabelPipe } from '../../shared/pipes/category-label.pipe';
+import { paginate } from '../../shared/utils/pagination.utils';
 
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    ConfirmDeleteModalComponent,
+    ProductFormModalComponent,
+    ProductOptionsModalComponent,
+    PaginationComponent,
+    CategoryLabelPipe,
+  ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.css',
 })
 export class ProductsComponent {
   products: Product[] = [];
-  categories: string[] = ['Bebestible', 'Comida'];
+  expandedProductIds = new Set<number>();
 
-  // pagination config
   currentPage = 1;
   pageSize = 5;
 
-  newProduct: Product = {
-    clientId: 'bahia-escondida',
-    name: '',
-    category: '',
-    price: null as any,
-  };
+  newProduct!: Product;
+  productToDeleteId: number | null = null;
+  showCreateModal = false;
+  savingProduct = false;
+
+  selectedProductForOptions: Product | null = null;
+  showOptionsModal = false;
+  savingOptions = false;
 
   constructor(private productService: ProductsService) {}
 
+  openCreateModal(): void {
+    this.resetNewProduct();
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+    this.savingProduct = false;
+  }
+
+  openOptionsModal(product: Product): void {
+    this.selectedProductForOptions = product;
+    this.showOptionsModal = true;
+  }
+
+  closeOptionsModal(): void {
+    this.showOptionsModal = false;
+    this.selectedProductForOptions = null;
+    this.savingOptions = false;
+  }
+
+  saveProductOptions(options: ProductOptionInput[]): void {
+    const productId = this.selectedProductForOptions?.id;
+    if (!productId) return;
+
+    this.savingOptions = true;
+
+    this.productService.addProductOptions(productId, options).subscribe({
+      next: (updatedProduct) => {
+        this.products = this.products.map((product) =>
+          product.id === updatedProduct.id
+            ? { ...updatedProduct, options: updatedProduct.options ?? [] }
+            : product,
+        );
+        this.expandedProductIds.add(productId);
+        this.closeOptionsModal();
+      },
+      error: (err) => {
+        this.savingOptions = false;
+        console.error('Error adding product options:', err);
+      },
+    });
+  }
+
+  private createEmptyProduct(): Product {
+    return {
+      name: '',
+      category: '',
+      price: null as any,
+    };
+  }
+
+  private resetNewProduct(): void {
+    this.newProduct = this.createEmptyProduct();
+  }
+
   ngOnInit(): void {
+    this.resetNewProduct();
     this.loadProducts();
   }
 
-  loadProducts() {
+  loadProducts(): void {
     this.productService.getProducts().subscribe((products) => {
       this.products = products ?? [];
     });
   }
 
-  // derived data
-  get totalPages(): number {
-    return Math.ceil(this.products.length / this.pageSize);
+  get paginatedProducts(): Product[] {
+    return paginate(this.products, this.currentPage, this.pageSize);
   }
 
-  get paginatedProducts() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    return this.products.slice(start, end);
+  onPageChange(page: number): void {
+    this.currentPage = page;
   }
 
-  // range text
-  get startItem(): number {
-    return this.products.length === 0
-      ? 0
-      : (this.currentPage - 1) * this.pageSize + 1;
+  hasOptions(product: Product): boolean {
+    return productHasOptions(product);
   }
 
-  get endItem(): number {
-    const end = this.currentPage * this.pageSize;
-    return end > this.products.length ? this.products.length : end;
+  optionsCount(product: Product): number {
+    return product.options?.length ?? 0;
   }
 
-  // navigation
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+  isExpanded(productId?: number): boolean {
+    return productId != null && this.expandedProductIds.has(productId);
+  }
+
+  toggleOptions(productId?: number): void {
+    if (productId == null) return;
+
+    if (this.expandedProductIds.has(productId)) {
+      this.expandedProductIds.delete(productId);
+    } else {
+      this.expandedProductIds.add(productId);
     }
   }
 
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      maximumFractionDigits: 0,
+    }).format(price);
+  }
+
+  private clampCurrentPage(): void {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(this.products.length / this.pageSize),
+    );
+    if (this.currentPage > totalPages) {
+      this.currentPage = totalPages;
     }
   }
 
-  prevPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-    }
-  }
-
-  addProduct() {
+  addProduct(options: ProductOptionInput[] = []): void {
     const productToCreate: Product = { ...this.newProduct };
 
-    this.productService.addProduct(productToCreate).subscribe({
-      next: (createdProduct) => {
-        this.products.push(createdProduct);
+    this.savingProduct = true;
 
-        this.newProduct = {
-          clientId: 'bahia-escondida',
-          name: '',
-          category: '',
-          price: null as any,
-        };
+    this.productService.addProduct(productToCreate, options).subscribe({
+      next: (createdProduct) => {
+        this.products.push({
+          ...createdProduct,
+          options: createdProduct.options ?? [],
+        });
+
+        if (createdProduct.id && (createdProduct.options?.length ?? 0) > 0) {
+          this.expandedProductIds.add(createdProduct.id);
+        }
+
+        this.currentPage = Math.max(
+          1,
+          Math.ceil(this.products.length / this.pageSize),
+        );
+
+        this.closeCreateModal();
+        this.resetNewProduct();
       },
       error: (err) => {
+        this.savingProduct = false;
         console.error('Error creating product:', err);
       },
     });
   }
 
-  deleteProduct(index: number, productId?: number) {
+  openDeleteModal(productId?: number): void {
     if (!productId) return;
+    this.productToDeleteId = productId;
+  }
 
+  closeDeleteModal(): void {
+    this.productToDeleteId = null;
+  }
+
+  onDeleteConfirmed(): void {
+    if (this.productToDeleteId == null) return;
+
+    this.deleteProduct(this.productToDeleteId);
+    this.closeDeleteModal();
+  }
+
+  deleteProduct(productId: number): void {
     this.productService.deleteProduct(productId).subscribe({
       next: () => {
-        this.products.splice(index, 1);
+        this.expandedProductIds.delete(productId);
+        this.products = this.products.filter(
+          (product) => product.id !== productId,
+        );
+        this.clampCurrentPage();
       },
       error: (err) => {
-        console.error('Error creating product:', err);
+        console.error('Error deleting product:', err);
       },
     });
   }

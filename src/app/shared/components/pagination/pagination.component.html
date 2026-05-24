@@ -1,0 +1,41 @@
+<div
+  class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+>
+  <span class="text-sm text-gray-600">
+    Mostrando {{ view.startItem }} - {{ view.endItem }} de
+    {{ totalItems }} {{ itemLabel }}
+  </span>
+
+  <div class="flex items-center gap-1">
+    <button
+      type="button"
+      class="px-3 py-1 rounded-md border text-sm hover:bg-gray-100 disabled:opacity-50"
+      [disabled]="!view.canGoPrev"
+      (click)="prevPage()"
+    >
+      ‹
+    </button>
+
+    <button
+      type="button"
+      *ngFor="let page of view.pages"
+      (click)="goToPage(page)"
+      class="px-3 py-1 rounded-md border text-sm"
+      [ngClass]="{
+        'bg-blue-500 text-white border-blue-500': currentPage === page,
+        'hover:bg-gray-100': currentPage !== page,
+      }"
+    >
+      {{ page }}
+    </button>
+
+    <button
+      type="button"
+      class="px-3 py-1 rounded-md border text-sm hover:bg-gray-100 disabled:opacity-50"
+      [disabled]="!view.canGoNext"
+      (click)="nextPage()"
+    >
+      ›
+    </button>
+  </div>
+</div>

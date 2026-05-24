@@ -8,8 +8,7 @@ import { Payment } from '../../models/payments';
   providedIn: 'root',
 })
 export class PaymentsService {
-  private apiUrl = `${environment.apiUrl}/payments`; // backend endpoint
-  private clientId = 'bahia-escondida';
+  private apiUrl = `${environment.apiUrl}/payments`;
 
   constructor(private http: HttpClient) {}
 

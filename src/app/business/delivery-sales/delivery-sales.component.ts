@@ -2,52 +2,66 @@ import { Component } from '@angular/core';
 import { Sale } from '../../shared/models/sales';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { SalesService } from '../../shared/services/sales/sales.service';
+import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
+import { ConfirmDeleteModalComponent } from '../../shared/components/confirm-delete-modal/confirm-delete-modal.component';
+import { SaleFormModalComponent } from '../../shared/components/sale-form-modal/sale-form-modal.component';
+import { paginate } from '../../shared/utils/pagination.utils';
 
 @Component({
   selector: 'app-delivery-sales',
-  imports: [CommonModule, FormsModule],
+  standalone: true,
+  imports: [
+    CommonModule,
+    PaginationComponent,
+    ConfirmDeleteModalComponent,
+    SaleFormModalComponent,
+  ],
   templateUrl: './delivery-sales.component.html',
   styleUrl: './delivery-sales.component.css',
 })
 export class DeliverySalesComponent {
   sales: Sale[] = [];
   filteredSales: Sale[] = [];
-  newSale: Sale = {
-    tableNumber: null,
-    isDelivery: true, // ALWAYS true
-    clientId: 'bahia-escondida',
-    status: 'abierta',
-    products: [],
-    customerNickname: '',
-  };
+  newSale!: Sale;
 
   // pagination
   currentPage = 1;
-  pageSize = 8; // rows per page
-  // modal state
-  showDeleteModal = false;
+  pageSize = 6; // rows per page
   saleToDeleteId: number | null = null;
+  showCreateModal = false;
 
   constructor(
     private router: Router,
     private salesService: SalesService,
   ) {}
 
+  openCreateModal(): void {
+    this.resetNewSale();
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+  }
+
+  private createEmptySale(): Sale {
+    return {
+      tableNumber: null,
+      isDelivery: true,
+      status: 'abierta',
+      products: [],
+      customerNickname: '',
+    };
+  }
+
+  private resetNewSale(): void {
+    this.newSale = this.createEmptySale();
+  }
+
   ngOnInit() {
+    this.resetNewSale();
     this.loadSales();
-  }
-
-  get startItem(): number {
-    return (this.currentPage - 1) * this.pageSize + 1;
-  }
-
-  get endItem(): number {
-    return Math.min(
-      this.currentPage * this.pageSize,
-      this.filteredSales.length,
-    );
   }
 
   loadSales() {
@@ -57,32 +71,12 @@ export class DeliverySalesComponent {
     });
   }
 
-  get totalPages(): number {
-    return Math.ceil(this.filteredSales.length / this.pageSize);
+  get paginatedSales(): Sale[] {
+    return paginate(this.filteredSales, this.currentPage, this.pageSize);
   }
 
-  get paginatedSales() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    const end = start + this.pageSize;
-    return this.filteredSales.slice(start, end);
-  }
-
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-    }
-  }
-
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-    }
-  }
-
-  prevPage() {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-    }
+  onPageChange(page: number): void {
+    this.currentPage = page;
   }
 
   filterStatus(status: string): void {
@@ -118,7 +112,7 @@ export class DeliverySalesComponent {
         .createSale(
           0, // no table
           true, // always delivery
-          this.newSale.customerNickname || '',
+          this.newSale.customerNickname || ''
         )
         .subscribe((createdSale) => {
           const newSale = {
@@ -132,15 +126,8 @@ export class DeliverySalesComponent {
           this.filteredSales = [...this.sales];
           this.currentPage = 1;
 
-          // reset form
-          this.newSale = {
-            tableNumber: null,
-            isDelivery: true,
-            clientId: 'bahia-escondida',
-            status: 'abierta',
-            products: [],
-            customerNickname: '',
-          };
+          this.closeCreateModal();
+          this.resetNewSale();
         });
     } catch (error) {
       console.log('Error creating sale:', error);
@@ -153,7 +140,7 @@ export class DeliverySalesComponent {
     return sale.products.reduce(
       (total: number, product: any) =>
         total + product.price * (product.quantity ?? 1),
-      0,
+      0
     );
   }
 
@@ -161,23 +148,21 @@ export class DeliverySalesComponent {
     this.salesService.deleteSale(saleId).subscribe(() => {
       this.sales = this.sales.filter((sale) => sale.id !== saleId);
       this.filteredSales = this.filteredSales.filter(
-        (sale) => sale.id !== saleId,
+        (sale) => sale.id !== saleId
       );
     });
   }
 
-  openDeleteModal(saleId: number) {
+  openDeleteModal(saleId: number): void {
     this.saleToDeleteId = saleId;
-    this.showDeleteModal = true;
   }
 
-  closeDeleteModal() {
-    this.showDeleteModal = false;
+  closeDeleteModal(): void {
     this.saleToDeleteId = null;
   }
 
-  confirmDelete() {
-    if (!this.saleToDeleteId) return;
+  onDeleteConfirmed(): void {
+    if (this.saleToDeleteId == null) return;
 
     this.deleteSale(this.saleToDeleteId);
     this.closeDeleteModal();

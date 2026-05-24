@@ -1,0 +1,174 @@
+<div
+  *ngIf="open"
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="add-products-title"
+>
+  <div
+    class="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
+  >
+    <div
+      class="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0"
+    >
+      <div>
+        <h3 id="add-products-title" class="text-lg font-semibold text-gray-800">
+          Agregar productos
+        </h3>
+        <p class="text-sm text-gray-500 mt-0.5">
+          Selecciona productos y confírmalos en la venta
+        </p>
+      </div>
+      <button
+        type="button"
+        class="text-gray-400 hover:text-gray-600 text-xl leading-none"
+        aria-label="Cerrar"
+        (click)="onCancel()"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+      <!-- Available products -->
+      <div class="lg:w-3/5 p-6 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col min-h-0">
+        <label class="block text-sm font-medium text-gray-700 mb-2" for="product-search">
+          Buscar producto
+        </label>
+        <input
+          id="product-search"
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="onSearchInput()"
+          placeholder="Ej: cazuela, bebidas..."
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <div class="flex-1 overflow-y-auto border border-gray-200 rounded-lg min-h-[240px]">
+          <table class="min-w-full border-collapse">
+            <thead
+              class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold sticky top-0 z-10"
+            >
+              <tr>
+                <th class="px-4 py-3 text-left">Producto</th>
+                <th class="px-4 py-3 text-left">Categoría</th>
+                <th class="px-4 py-3 text-right">Precio</th>
+                <th class="px-4 py-3 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 text-gray-800">
+              <tr
+                *ngFor="let product of filteredProducts"
+                class="hover:bg-gray-50 transition-colors"
+              >
+                <td class="px-4 py-3 font-medium">{{ product.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">
+                  {{ product.category | categoryLabel }}
+                </td>
+                <td class="px-4 py-3 text-right">
+                  {{ product.price | currency : 'USD' }}
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded-md transition"
+                    (click)="onAddProduct(product)"
+                  >
+                    <span class="text-base leading-none">+</span>
+                    Agregar
+                  </button>
+                </td>
+              </tr>
+
+              <tr *ngIf="filteredProducts.length === 0">
+                <td colspan="4" class="px-4 py-10 text-center text-gray-500 text-sm">
+                  No se encontraron productos.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pending products -->
+      <div class="lg:w-2/5 p-6 flex flex-col min-h-0 bg-gray-50">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-base font-semibold text-gray-800">
+            Por agregar
+          </h4>
+          <span
+            class="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700"
+          >
+            {{ pendingProducts.length }} ítem(s)
+          </span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto border border-gray-200 rounded-lg bg-white min-h-[200px]">
+          <table class="min-w-full border-collapse" *ngIf="pendingProducts.length > 0">
+            <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold">
+              <tr>
+                <th class="px-4 py-2 text-left">Producto</th>
+                <th class="px-4 py-2 text-center">Cant.</th>
+                <th class="px-4 py-2 text-right">Subtotal</th>
+                <th class="px-4 py-2 text-center"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 text-gray-800">
+              <tr *ngFor="let product of pendingProducts">
+                <td class="px-4 py-2 text-sm font-medium">{{ product.name }}</td>
+                <td class="px-4 py-2 text-center text-sm">{{ product.quantity }}</td>
+                <td class="px-4 py-2 text-right text-sm">
+                  {{ product.price * product.quantity | currency : 'USD' }}
+                </td>
+                <td class="px-4 py-2 text-center">
+                  <button
+                    type="button"
+                    class="bg-red-100 hover:bg-red-200 text-red-700 text-sm w-7 h-7 rounded-md transition"
+                    (click)="onRemovePending(product.name)"
+                    aria-label="Quitar producto"
+                  >
+                    −
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div
+            *ngIf="pendingProducts.length === 0"
+            class="h-full flex items-center justify-center p-6 text-center text-sm text-gray-500"
+          >
+            Agrega productos desde la lista de la izquierda.
+          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-gray-200">
+          <div class="flex justify-between text-sm text-gray-600 mb-4">
+            <span>Total pendiente</span>
+            <span class="font-semibold text-gray-800">
+              {{ pendingTotal | currency : 'USD' }}
+            </span>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              class="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-white transition"
+              (click)="onCancel()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="flex-1 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              [disabled]="pendingProducts.length === 0"
+              (click)="onConfirm()"
+            >
+              Confirmar productos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
