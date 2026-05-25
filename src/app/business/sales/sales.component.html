@@ -32,10 +32,9 @@
         <thead class="bg-gray-100 text-gray-700 uppercase text-sm font-semibold">
           <tr>
             <th class="px-6 py-3">Mesa / Nombre</th>
-            <th class="px-6 py-3 text-center">Consumo</th>
             <th class="px-6 py-3">Estado</th>
             <th class="px-6 py-3">Monto</th>
-            <th class="px-6 py-3">Fecha de creación</th>
+            <th class="px-6 py-3">Pago</th>
             <th class="px-6 py-3 text-center">Acciones</th>
           </tr>
         </thead>
@@ -43,14 +42,6 @@
         <tbody class="divide-y divide-gray-200">
           <tr *ngFor="let sale of paginatedSales" class="hover:bg-gray-50">
             <td class="px-6 py-4 font-medium">#{{ sale.tableNumber }}</td>
-
-            <td class="px-6 py-4 text-center whitespace-nowrap">
-              <span class="font-medium" [ngClass]="
-                  sale.isDelivery ? 'text-blue-600' : 'text-yellow-600'
-                ">
-                {{ sale.isDelivery ? "Para llevar" : "Para servir" }}
-              </span>
-            </td>
 
             <td class="px-6 py-4">
               <span class="font-semibold" [ngClass]="{
@@ -62,11 +53,10 @@
               </span>
             </td>
 
-            <td class="px-6 py-4">{{ getSaleTotal(sale) }}</td>
+            <td class="px-6 py-4 font-medium">{{ formatPrice(getSaleTotal(sale)) }}</td>
 
             <td class="px-6 py-4">
-              {{ sale.createdAt | date: "dd-MM-yy" }}
-              {{ sale.createdAt | date: "HH:mm:ss" }}
+              <app-sale-payments-summary [sale]="sale" [compact]="true" />
             </td>
 
             <td class="px-6 py-4 text-center">

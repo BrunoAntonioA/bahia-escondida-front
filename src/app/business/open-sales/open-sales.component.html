@@ -1,0 +1,175 @@
+<div class="mx-auto mt-8 max-w-6xl px-4 pb-10">
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800">Ventas abiertas</h1>
+      <p class="text-sm text-gray-600 mt-1">
+        Resumen en vivo de mesas y delivery con pedidos activos
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 transition"
+        (click)="goHome()"
+      >
+        ← Inicio
+      </button>
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600 transition"
+        (click)="loadOpenSales()"
+      >
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <div
+    *ngIf="!loading"
+    class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3"
+  >
+    <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-gray-500">Total abiertas</p>
+      <p class="text-2xl font-semibold text-gray-800">{{ totalOpen }}</p>
+    </div>
+    <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-amber-700">Mesas</p>
+      <p class="text-2xl font-semibold text-amber-900">{{ tableSales.length }}</p>
+    </div>
+    <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-blue-700">Delivery</p>
+      <p class="text-2xl font-semibold text-blue-900">{{ deliverySales.length }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="rounded-2xl border border-gray-200 bg-white p-10 text-center text-gray-500">
+    Cargando ventas abiertas...
+  </div>
+
+  <div
+    *ngIf="!loading && totalOpen === 0"
+    class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center"
+  >
+    <p class="text-gray-600 font-medium">No hay ventas abiertas en este momento.</p>
+    <p class="text-sm text-gray-500 mt-2">
+      Cuando abras mesas o delivery, aparecerán aquí con sus productos.
+    </p>
+  </div>
+
+  <ng-container *ngIf="!loading && totalOpen > 0">
+    <section *ngIf="tableSales.length > 0" class="mb-8">
+      <div class="mb-3 flex items-center gap-2">
+        <h2 class="text-lg font-semibold text-gray-800">Mesas</h2>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+          {{ tableSales.length }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <article
+          *ngFor="let sale of tableSales"
+          class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+        >
+          <ng-container
+            *ngTemplateOutlet="saleCard; context: { $implicit: sale }"
+          ></ng-container>
+        </article>
+      </div>
+    </section>
+
+    <section *ngIf="deliverySales.length > 0">
+      <div class="mb-3 flex items-center gap-2">
+        <h2 class="text-lg font-semibold text-gray-800">Delivery</h2>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+          {{ deliverySales.length }}
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <article
+          *ngFor="let sale of deliverySales"
+          class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+        >
+          <ng-container
+            *ngTemplateOutlet="saleCard; context: { $implicit: sale }"
+          ></ng-container>
+        </article>
+      </div>
+    </section>
+  </ng-container>
+</div>
+
+<ng-template #saleCard let-sale>
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-2">
+        <h3 class="font-semibold text-gray-800 truncate">{{ saleTitle(sale) }}</h3>
+        <span
+          class="text-[11px] px-2 py-0.5 rounded-full font-medium"
+          [ngClass]="
+            sale.isDelivery
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-amber-100 text-amber-700'
+          "
+        >
+          {{ saleBadge(sale) }}
+        </span>
+      </div>
+      <p class="text-xs text-gray-500 mt-1">
+        Venta #{{ sale.id }}
+        <span *ngIf="sale.createdAt"> · {{ sale.createdAt | date : 'dd/MM HH:mm' }}</span>
+      </p>
+    </div>
+
+    <div class="text-right shrink-0">
+      <p class="text-sm font-semibold text-gray-800">{{ formatPrice(saleTotal(sale)) }}</p>
+      <p class="text-xs text-gray-500 mt-0.5">
+        {{ productCount(sale) }} producto(s)
+      </p>
+    </div>
+  </div>
+
+  <div class="px-5 py-4">
+    <div *ngIf="(sale.products?.length ?? 0) > 0; else emptyProducts" class="space-y-3">
+      <div
+        *ngFor="let line of sale.products"
+        class="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-2.5"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <p class="text-sm font-medium text-gray-800">
+            <span class="text-gray-500">x{{ line.quantity }}</span>
+            {{ line.name }}
+          </p>
+          <span class="text-xs font-medium text-gray-600 shrink-0">
+            {{ formatPrice(lineTotal(line)) }}
+          </span>
+        </div>
+
+        <div
+          *ngIf="line.selectedOptions?.length"
+          class="flex flex-wrap gap-1 mt-2"
+        >
+          <span
+            *ngFor="let option of line.selectedOptions"
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-white text-gray-700 border border-gray-200"
+          >
+            {{ option.optionName }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #emptyProducts>
+      <p class="text-sm text-gray-500 italic">Sin productos agregados aún.</p>
+    </ng-template>
+
+    <button
+      type="button"
+      class="mt-4 w-full py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+      (click)="viewSale(sale)"
+    >
+      Ver detalle
+    </button>
+  </div>
+</ng-template>

@@ -29,6 +29,10 @@ export const routes: Routes = [
         loadComponent: () => DeliverySalesComponent,
       },
       {
+        path: 'delivery/:id',
+        loadComponent: () => SalesDetailComponent,
+      },
+      {
         path: 'productos',
         loadComponent: () => ProductsComponent,
       },
@@ -48,6 +52,13 @@ export const routes: Routes = [
       {
         path: 'reporte-diario',
         loadComponent: () => DailyReportComponent,
+      },
+      {
+        path: 'ventas-abiertas',
+        loadComponent: () =>
+          import('./business/open-sales/open-sales.component').then(
+            (m) => m.OpenSalesComponent,
+          ),
       },
     ],
   },

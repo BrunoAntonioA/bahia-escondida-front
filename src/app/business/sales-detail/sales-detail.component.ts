@@ -1,31 +1,42 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Product, SaleProduct } from '../../shared/models/product';
+import { Product } from '../../shared/models/product';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Sale } from '../../shared/models/sales';
+import {
+  PendingSaleProduct,
+  Sale,
+  SaleProductLine,
+  formatPriceClp,
+  getPrimaryPayment,
+  pendingSaleProductKey,
+  saleLineTotal,
+} from '../../shared/models/sales';
 import { ProductsService } from '../../shared/services/products.service';
 import { SalesService } from '../../shared/services/sales/sales.service';
 import { PaymentsService } from '../../shared/services/payments/payments.service';
 import { PrinterService } from '../../shared/services/printer/printer.service';
 import { SaleAddProductsModalComponent } from '../../shared/components/sale-add-products-modal/sale-add-products-modal.component';
-import { switchMap, tap } from 'rxjs';
+import { SalePaymentModalComponent } from '../../shared/components/sale-payment-modal/sale-payment-modal.component';
+import { forkJoin, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-sales-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, SaleAddProductsModalComponent],
+  imports: [CommonModule, FormsModule, SaleAddProductsModalComponent, SalePaymentModalComponent],
   templateUrl: './sales-detail.component.html',
   styleUrl: './sales-detail.component.css',
 })
-export class SalesDetailComponent {
+export class SalesDetailComponent implements OnInit {
   saleId: number | null = null;
-  saleProducts: SaleProduct[] = [];
-  pendingProducts: SaleProduct[] = [];
+  saleProducts: SaleProductLine[] = [];
+  pendingProducts: PendingSaleProduct[] = [];
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
   showCloseModal = false;
   showAddProductsModal = false;
+  showPaymentModal = false;
+  addingProducts = false;
 
   payment = {
     efectivo: 0,
@@ -41,7 +52,7 @@ export class SalesDetailComponent {
     products: [],
   };
 
-  loading: boolean = true;
+  loading = true;
   searchTerm = '';
 
   constructor(
@@ -61,17 +72,21 @@ export class SalesDetailComponent {
     this.loadProducts();
   }
 
-  getSaleById(id: number) {
-    this.salesService.getSaleById(id).subscribe((sale) => {
-      this.sale = sale ?? [];
-      this.loading = false;
-      if (this.sale?.products) {
-        this.saleProducts = this.sale.products;
-      }
+  getSaleById(id: number): void {
+    this.loading = true;
+    this.salesService.getSaleById(id).subscribe({
+      next: (sale) => {
+        this.sale = sale;
+        this.saleProducts = sale.products ?? [];
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      },
     });
   }
 
-  loadProducts() {
+  loadProducts(): void {
     this.productsService.getProducts().subscribe((products) => {
       this.allProducts = products ?? [];
       this.filteredProducts = [...this.allProducts];
@@ -79,33 +94,44 @@ export class SalesDetailComponent {
   }
 
   commitProducts(): void {
-    if (this.pendingProducts.length === 0) return;
-    try {
-      this.pendingProducts.forEach((pending) => {
-        this.salesService
-          .addProductToSale(pending.id ?? 0, this.saleId!, pending.quantity)
-          .subscribe(() => {
-            const existing = this.saleProducts.find(
-              (p) => p.name === pending.name,
-            );
-            if (existing) {
-              existing.quantity += pending.quantity;
-            } else {
-              this.saleProducts.push({ ...pending });
-            }
-          });
-      });
-      this.pendingProducts = [];
-      this.closeAddProductsModal();
-    } catch (error) {
-      console.log('Error adding products to sale:', error);
+    if (this.pendingProducts.length === 0 || !this.saleId || this.addingProducts) {
+      return;
     }
+
+    this.addingProducts = true;
+
+    const requests = this.pendingProducts.map((pending) =>
+      this.salesService.addProductToSale({
+        saleId: this.saleId!,
+        productId: pending.productId,
+        quantity: pending.quantity,
+        selectedOptionIds: pending.selectedOptionIds.length
+          ? pending.selectedOptionIds
+          : undefined,
+        observation: pending.observation,
+      }),
+    );
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.pendingProducts = [];
+        this.addingProducts = false;
+        this.closeAddProductsModal();
+        this.getSaleById(this.saleId!);
+      },
+      error: (error) => {
+        console.error('Error adding products to sale:', error);
+        this.addingProducts = false;
+      },
+    });
   }
 
-  deleteProductFromSale(productId: number) {
-    this.salesService.deleteProductSale(this.saleId ?? 0, productId).subscribe({
+  deleteProductFromSale(saleProductId: number): void {
+    if (!this.saleId) return;
+
+    this.salesService.deleteSaleProductLine(this.saleId, saleProductId).subscribe({
       next: () => {
-        this.saleProducts = this.saleProducts.filter((p) => p.id !== productId);
+        this.getSaleById(this.saleId!);
       },
       error: (err) => {
         console.error('Error deleting product from sale:', err);
@@ -113,41 +139,32 @@ export class SalesDetailComponent {
     });
   }
 
-  addProductToPending(product: Product): void {
-    const existing = this.pendingProducts.find((p) => p.name === product.name);
+  addPendingProduct(item: PendingSaleProduct): void {
+    const key = pendingSaleProductKey(item);
+    const existing = this.pendingProducts.find(
+      (pending) => pendingSaleProductKey(pending) === key,
+    );
+
     if (existing) {
-      existing.quantity += 1;
+      existing.quantity += item.quantity;
+      if (item.observation && !existing.observation) {
+        existing.observation = item.observation;
+      }
     } else {
-      this.pendingProducts.push({
-        id: product.id,
-        saleId: this.saleId || 0,
-        name: product.name,
-        price: product.price,
-        category: product.category,
-        quantity: 1,
-        clientId: product.clientId,
-      });
+      this.pendingProducts.push({ ...item });
     }
   }
 
-  removePendingProduct(name: string): void {
-    const existing = this.pendingProducts.find((p) => p.name === name);
-
-    if (existing) {
-      if (existing.quantity > 1) {
-        existing.quantity -= 1;
-      } else {
-        this.pendingProducts = this.pendingProducts.filter(
-          (p) => p.name !== name,
-        );
-      }
-    }
+  removePendingProduct(key: string): void {
+    this.pendingProducts = this.pendingProducts.filter(
+      (pending) => pendingSaleProductKey(pending) !== key,
+    );
   }
 
   searchProducts(): void {
     const term = this.searchTerm.toLowerCase();
-    this.filteredProducts = this.allProducts.filter((p) =>
-      p.name.toLowerCase().includes(term),
+    this.filteredProducts = this.allProducts.filter((product) =>
+      product.name.toLowerCase().includes(term),
     );
   }
 
@@ -168,49 +185,61 @@ export class SalesDetailComponent {
     this.filteredProducts = [...this.allProducts];
   }
 
-  navigateToSales() {
+  navigateToSales(): void {
     const path = this.sale.isDelivery ? '/delivery' : '/ventas';
     this.router.navigate([path]);
   }
 
-  pendingProductsTotal(): number {
-    return this.pendingProducts.reduce(
-      (sum, p) => sum + p.price * p.quantity,
+  lineTotal(line: SaleProductLine): number {
+    return saleLineTotal(line);
+  }
+
+  totalProductsPrice(): number {
+    return this.saleProducts.reduce(
+      (sum, product) => sum + saleLineTotal(product),
       0,
     );
   }
 
-  totalProductsPrice(): number {
-    return this.saleProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
+  formatPrice(price: number): string {
+    return formatPriceClp(price);
   }
 
-  printSale() {
+  get isOpen(): boolean {
+    return this.sale.status === 'abierta';
+  }
+
+  get hasPayment(): boolean {
+    return !!getPrimaryPayment(this.sale);
+  }
+
+  openPaymentModal(): void {
+    this.showPaymentModal = true;
+  }
+
+  closePaymentModal(): void {
+    this.showPaymentModal = false;
+  }
+
+  printSale(): void {
     this.printerService.printSale(this.sale);
   }
 
-  printKitchen() {
+  printKitchen(): void {
     this.printerService.printKitchenSale(this.sale);
   }
 
-  openCloseModal() {
+  openCloseModal(): void {
     this.payment = { efectivo: 0, tarjeta: 0, transferencia: 0, propinas: 0 };
     this.showCloseModal = true;
   }
 
-  closeTable() {
-    this.salesService.closeSale(this.saleId!).subscribe(() => {
-      this.navigateToSales();
-    });
-  }
-
-  cancelCloseSale() {
+  cancelCloseSale(): void {
     this.showCloseModal = false;
   }
 
-  confirmCloseSale() {
+  confirmCloseSale(): void {
     const total = this.totalProductsPrice();
-
-    // Sum only efectivo + tarjeta + transferencia
     const paid =
       (this.payment.efectivo || 0) +
       (this.payment.tarjeta || 0) +

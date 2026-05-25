@@ -25,6 +25,16 @@
       </svg>
     </button>
 
-    <span class="text-lg font-semibold text-gray-800">Bahia escondida</span>
+    <div class="min-w-0 flex-1">
+      <p
+        class="text-lg font-semibold text-gray-800 truncate"
+        [title]="authService.getClientName() || 'Mi negocio'"
+      >
+        {{ authService.getClientName() || 'Mi negocio' }}
+      </p>
+      <p class="text-xs text-gray-500 truncate sm:hidden">
+        {{ authService.getUserEmail() }}
+      </p>
+    </div>
   </div>
 </header>

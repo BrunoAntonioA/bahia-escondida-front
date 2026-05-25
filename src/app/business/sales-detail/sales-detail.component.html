@@ -19,9 +19,24 @@
             {{ sale.status | titlecase }}
           </span>
         </p>
+        <p *ngIf="sale.createdAt" class="text-sm text-gray-600 mt-1">
+          <span class="font-medium">Fecha de creación:</span>
+          {{ sale.createdAt | date : 'dd/MM/yyyy HH:mm' }}
+        </p>
+        <p *ngIf="sale.closedAt" class="text-sm text-gray-600 mt-1">
+          <span class="font-medium">Fecha de cierre:</span>
+          {{ sale.closedAt | date : 'dd/MM/yyyy HH:mm' }}
+        </p>
       </div>
 
       <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="openPaymentModal()"
+          class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+        >
+          {{ hasPayment ? 'Ver pago' : 'Estado del pago' }}
+        </button>
         <button
           type="button"
           (click)="printSale()"
@@ -37,6 +52,7 @@
           Imprimir comanda
         </button>
         <button
+          *ngIf="isOpen"
           type="button"
           (click)="openCloseModal()"
           class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
@@ -55,6 +71,7 @@
         </h3>
 
         <button
+          *ngIf="isOpen"
           type="button"
           class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition shadow-sm"
           (click)="openAddProductsModal()"
@@ -71,30 +88,50 @@
       </div>
 
       <div *ngIf="!loading && saleProducts.length > 0" class="overflow-x-auto">
-        <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-          <thead class="bg-gray-100 text-gray-700 uppercase text-sm font-semibold">
+        <table class="min-w-full border border-gray-200 rounded-xl overflow-hidden">
+          <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold">
             <tr>
-              <th class="px-6 py-3 text-left">Producto</th>
-              <th class="px-6 py-3 text-center">Cantidad</th>
-              <th class="px-6 py-3 text-right">Precio</th>
-              <th class="px-6 py-3 text-center">Acción</th>
+              <th class="px-5 py-3 text-left">Producto</th>
+              <th class="px-5 py-3 text-center">Cant.</th>
+              <th class="px-5 py-3 text-right">Total</th>
+              <th class="px-5 py-3 text-center"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 text-gray-800">
             <tr
-              *ngFor="let p of saleProducts"
+              *ngFor="let line of saleProducts"
               class="hover:bg-gray-50 transition-colors"
             >
-              <td class="px-6 py-3 font-medium">{{ p.name }}</td>
-              <td class="px-6 py-3 text-center">{{ p.quantity }}</td>
-              <td class="px-6 py-3 text-right">
-                {{ p.price * p.quantity | currency : 'USD' }}
+              <td class="px-5 py-3">
+                <p class="font-medium text-gray-800">{{ line.name }}</p>
+                <div
+                  *ngIf="line.selectedOptions?.length"
+                  class="flex flex-wrap gap-1 mt-1.5"
+                >
+                  <span
+                    *ngFor="let option of line.selectedOptions"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-blue-50 text-blue-700 border border-blue-100"
+                  >
+                    {{ option.optionName }}
+                  </span>
+                </div>
+                <p
+                  *ngIf="line.observation"
+                  class="text-xs text-gray-500 mt-1 italic"
+                >
+                  {{ line.observation }}
+                </p>
               </td>
-              <td class="px-6 py-3 text-center">
+              <td class="px-5 py-3 text-center text-sm">{{ line.quantity }}</td>
+              <td class="px-5 py-3 text-right text-sm font-medium">
+                {{ formatPrice(lineTotal(line)) }}
+              </td>
+              <td class="px-5 py-3 text-center">
                 <button
+                  *ngIf="isOpen"
                   type="button"
-                  (click)="deleteProductFromSale(p.id ?? 0)"
-                  class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded-md transition"
+                  (click)="deleteProductFromSale(line.id)"
+                  class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1.5 rounded-md transition border border-red-100"
                 >
                   Eliminar
                 </button>
@@ -103,9 +140,9 @@
           </tbody>
           <tfoot class="bg-gray-50 font-semibold text-gray-700 border-t">
             <tr>
-              <td colspan="2" class="px-6 py-3 text-right">Total:</td>
-              <td class="px-6 py-3 text-right">
-                {{ totalProductsPrice() | currency : 'USD' }}
+              <td colspan="2" class="px-5 py-3 text-right">Total:</td>
+              <td class="px-5 py-3 text-right">
+                {{ formatPrice(totalProductsPrice()) }}
               </td>
               <td></td>
             </tr>
@@ -119,6 +156,7 @@
       >
         <p class="text-gray-500 mb-4">No hay productos registrados para esta venta.</p>
         <button
+          *ngIf="isOpen"
           type="button"
           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition"
           (click)="openAddProductsModal()"
@@ -134,7 +172,7 @@
           (click)="navigateToSales()"
           class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition"
         >
-          ← Volver a ventas
+          ← Volver a {{ sale.isDelivery ? 'delivery' : 'ventas' }}
         </button>
       </div>
     </div>
@@ -146,13 +184,18 @@
   [filteredProducts]="filteredProducts"
   [pendingProducts]="pendingProducts"
   (searchChange)="onProductSearch($event)"
-  (addProduct)="addProductToPending($event)"
+  (addPending)="addPendingProduct($event)"
   (removePending)="removePendingProduct($event)"
   (confirm)="commitProducts()"
   (cancel)="closeAddProductsModal()"
 />
 
-<!-- CLOSE SALE MODAL -->
+<app-sale-payment-modal
+  [open]="showPaymentModal"
+  [sale]="sale"
+  (close)="closePaymentModal()"
+/>
+
 <div
   *ngIf="showCloseModal"
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -202,7 +245,7 @@
       <div class="text-right text-sm text-gray-600">
         Total venta:
         <span class="font-semibold">
-          {{ totalProductsPrice() | currency : 'USD' }}
+          {{ formatPrice(totalProductsPrice()) }}
         </span>
       </div>
     </div>

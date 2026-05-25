@@ -1,4 +1,4 @@
-export type ProductCategory = 'FOOD' | 'DRINK';
+export type ProductCategory = 'FOOD' | 'DRINKS';
 
 export interface ProductCategoryOption {
   value: ProductCategory;
@@ -7,11 +7,12 @@ export interface ProductCategoryOption {
 
 export const PRODUCT_CATEGORY_OPTIONS: ProductCategoryOption[] = [
   { value: 'FOOD', label: 'Comida' },
-  { value: 'DRINK', label: 'Bebestible' },
+  { value: 'DRINKS', label: 'Bebestible' },
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
   FOOD: 'Comida',
+  DRINKS: 'Bebestible',
   DRINK: 'Bebestible',
   COMIDA: 'Comida',
   BEBESTIBLE: 'Bebestible',

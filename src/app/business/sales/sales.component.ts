@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
-import { Sale } from '../../shared/models/sales';
+import { Sale, formatPriceClp, saleProductsTotal } from '../../shared/models/sales';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SalesService } from '../../shared/services/sales/sales.service';
 import { PaginationComponent } from '../../shared/components/pagination/pagination.component';
 import { ConfirmDeleteModalComponent } from '../../shared/components/confirm-delete-modal/confirm-delete-modal.component';
 import { SaleFormModalComponent } from '../../shared/components/sale-form-modal/sale-form-modal.component';
+import { SalePaymentsSummaryComponent } from '../../shared/components/sale-payments-summary/sale-payments-summary.component';
 import { paginate } from '../../shared/utils/pagination.utils';
 
 @Component({
@@ -16,6 +17,7 @@ import { paginate } from '../../shared/utils/pagination.utils';
     PaginationComponent,
     ConfirmDeleteModalComponent,
     SaleFormModalComponent,
+    SalePaymentsSummaryComponent,
   ],
   templateUrl: './sales.component.html',
   styleUrl: './sales.component.css',
@@ -127,14 +129,12 @@ export class SalesComponent {
     if (saleNumber) this.router.navigate(['/ventas', saleNumber]);
   }
 
-  getSaleTotal(sale: any): number {
-    if (!sale?.products?.length) return 0;
+  getSaleTotal(sale: Sale): number {
+    return saleProductsTotal(sale);
+  }
 
-    return sale.products.reduce(
-      (total: number, product: any) =>
-        total + product.price * (product.quantity ?? 1),
-      0
-    );
+  formatPrice(price: number): string {
+    return formatPriceClp(price);
   }
 
   deleteSale(saleId: number) {

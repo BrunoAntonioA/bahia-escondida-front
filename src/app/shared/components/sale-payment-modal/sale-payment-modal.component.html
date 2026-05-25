@@ -1,0 +1,40 @@
+<div
+  *ngIf="open"
+  class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="sale-payment-title"
+>
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div>
+        <h3 id="sale-payment-title" class="text-lg font-semibold text-gray-800">
+          Detalle del pago
+        </h3>
+        <p class="text-sm text-gray-500 mt-0.5">Venta #{{ sale.id }}</p>
+      </div>
+      <button
+        type="button"
+        class="text-gray-400 hover:text-gray-600 text-xl leading-none"
+        aria-label="Cerrar"
+        (click)="onClose()"
+      >
+        ×
+      </button>
+    </div>
+
+    <div class="p-6">
+      <app-sale-payments-summary [sale]="sale" />
+    </div>
+
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+        (click)="onClose()"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>

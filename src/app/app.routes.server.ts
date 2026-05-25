@@ -20,6 +20,10 @@ export const serverRoutes: ServerRoute[] = [
     path: 'ventas/:id',
     renderMode: RenderMode.Server,
   },
+  {
+    path: 'delivery/:id',
+    renderMode: RenderMode.Server,
+  },
 
   // Fallback
   {

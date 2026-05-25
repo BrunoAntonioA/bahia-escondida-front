@@ -1,6 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Sale } from '../../models/sales';
+import {
+  AddProductToSalePayload,
+  Sale,
+} from '../../models/sales';
+import { SalesPaymentSummary } from '../../models/payment-summary';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../enviroments/enviroment';
 import { map } from 'rxjs';
@@ -15,6 +19,15 @@ export class SalesService {
 
   getSaleById(id: number): Observable<Sale> {
     return this.http.get<Sale>(`${this.apiUrl}/${id}`);
+  }
+
+  getPaymentSummary(
+    startDate: string,
+    endDate: string,
+  ): Observable<SalesPaymentSummary> {
+    return this.http.get<SalesPaymentSummary>(`${this.apiUrl}/summary`, {
+      params: { startDate, endDate },
+    });
   }
 
   getSalesByClientId(filter = 'all'): Observable<Sale[]> {
@@ -38,28 +51,31 @@ export class SalesService {
     );
   }
 
-  addProductToSale(
-    productId: number,
-    saleId: number,
-    quantity: number,
-  ): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/add-product`, {
-      productId,
-      saleId,
-      quantity,
-    });
+  addProductToSale(payload: AddProductToSalePayload): Observable<SaleProductLineResponse> {
+    return this.http.post<SaleProductLineResponse>(
+      `${this.apiUrl}/add-product`,
+      payload,
+    );
   }
 
   createSale(
-    tableNumber: number,
+    tableNumber: number | null | undefined,
     isDelivery: boolean,
     customerNickname: string,
-  ): Observable<any> {
-    return this.http.post<any>(this.apiUrl, {
-      tableNumber,
+  ): Observable<Sale> {
+    const body: Record<string, unknown> = {
       isDelivery,
-      customerNickname,
-    });
+    };
+
+    if (isDelivery) {
+      if (customerNickname.trim()) {
+        body['customerNickname'] = customerNickname.trim();
+      }
+    } else if (tableNumber != null && tableNumber >= 1) {
+      body['tableNumber'] = tableNumber;
+    }
+
+    return this.http.post<Sale>(this.apiUrl, body);
   }
 
   closeSale(saleId: number): Observable<any> {
@@ -70,9 +86,17 @@ export class SalesService {
     return this.http.delete<any>(`${this.apiUrl}/${saleNumber}`);
   }
 
-  deleteProductSale(saleId: number, productId: number) {
-    return this.http.delete<any>(
-      `${this.apiUrl}/${saleId}/product/${productId}`,
+  deleteSaleProductLine(saleId: number, saleProductId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/${saleId}/lines/${saleProductId}`,
     );
   }
+}
+
+interface SaleProductLineResponse {
+  id: number;
+  productId: number;
+  name: string;
+  price: number;
+  quantity: number;
 }

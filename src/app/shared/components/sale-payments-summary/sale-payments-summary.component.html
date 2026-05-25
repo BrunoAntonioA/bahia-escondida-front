@@ -1,0 +1,90 @@
+<ng-container *ngIf="compact; else fullView">
+  <ng-container *ngIf="hasPayment && payment as p; else noPaymentCompact">
+    <div class="space-y-1">
+      <div class="flex flex-wrap gap-1">
+        <span
+          *ngFor="let row of paymentRows(p)"
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] border"
+          [ngClass]="
+            row.label === 'Propina'
+              ? 'bg-violet-50 text-violet-700 border-violet-100'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+          "
+        >
+          {{ row.label }} {{ formatPrice(row.amount) }}
+        </span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #noPaymentCompact>
+    <span class="text-xs text-gray-400">
+      {{ sale.status === 'abierta' ? 'Pendiente' : 'Sin pago' }}
+    </span>
+  </ng-template>
+</ng-container>
+
+<ng-template #fullView>
+  <div
+    *ngIf="hasPayment && payment as p"
+    class="rounded-2xl border border-emerald-100 bg-emerald-50/40 overflow-hidden"
+  >
+    <div class="px-5 py-4 border-b border-emerald-100 bg-emerald-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <h3 class="text-base font-semibold text-gray-800">Pago registrado</h3>
+        <p *ngIf="p.createdAt" class="text-sm text-gray-500 mt-0.5">
+          {{ p.createdAt | date : 'dd/MM/yyyy HH:mm' }}
+        </p>
+      </div>
+      <div class="text-left sm:text-right">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Total pagado</p>
+        <p class="text-xl font-semibold text-emerald-700">
+          {{ formatPrice(paymentWithTip(p)) }}
+        </p>
+      </div>
+    </div>
+
+    <div class="px-5 py-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="rounded-xl bg-white border border-gray-100 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Efectivo</p>
+        <p class="text-base font-semibold text-gray-800 mt-1">
+          {{ formatPrice(p.cashPaid) }}
+        </p>
+      </div>
+      <div class="rounded-xl bg-white border border-gray-100 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Tarjeta</p>
+        <p class="text-base font-semibold text-gray-800 mt-1">
+          {{ formatPrice(p.cardPaid) }}
+        </p>
+      </div>
+      <div class="rounded-xl bg-white border border-gray-100 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Transferencia</p>
+        <p class="text-base font-semibold text-gray-800 mt-1">
+          {{ formatPrice(p.transferPaid) }}
+        </p>
+      </div>
+      <div class="rounded-xl bg-white border border-violet-100 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-violet-600">Propina</p>
+        <p class="text-base font-semibold text-violet-700 mt-1">
+          {{ formatPrice(p.tipPaid) }}
+        </p>
+      </div>
+    </div>
+
+    <div class="px-5 py-4 border-t border-emerald-100 bg-white/70 flex justify-between text-sm sm:text-base">
+      <span class="text-gray-600">Subtotal venta</span>
+      <span class="font-medium text-gray-800">{{ formatPrice(paymentTotal(p)) }}</span>
+    </div>
+  </div>
+
+  <div
+    *ngIf="!hasPayment"
+    class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-4 text-sm text-gray-500"
+  >
+    {{
+      sale.status === 'abierta'
+        ? 'Esta venta aún no tiene pago registrado.'
+        : 'No hay pago registrado para esta venta.'
+    }}
+  </div>
+</ng-template>

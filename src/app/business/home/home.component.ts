@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { PrinterService } from '../../shared/services/printer/printer.service';
 import { SalesService } from '../../shared/services/sales/sales.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -12,11 +12,11 @@ import { CommonModule } from '@angular/common';
 })
 export class HomeComponent {
   message: string | null = null;
+  printing = false;
 
   constructor(
     private printerService: PrinterService,
     private salesService: SalesService,
-    private route: ActivatedRoute,
     private router: Router,
   ) {}
 
@@ -24,24 +24,36 @@ export class HomeComponent {
     this.navigateToDailyReport();
   }
 
+  viewOpenSales() {
+    this.router.navigate(['/ventas-abiertas']);
+  }
+
   navigateToDailyReport() {
     this.router.navigate(['/reporte-diario']);
   }
 
   printOpenSales() {
-    this.salesService.getSalesByClientId('isDelivery').subscribe((sales) => {
-      const filteredSales = sales.filter((sale) => sale.status === 'abierta');
-      console.log(filteredSales);
+    if (this.printing) return;
 
-      if (!filteredSales.length) {
-        this.showMessage('No hay ventas abiertas para imprimir.');
-        console.log('entra al if');
-        return;
-      }
+    this.printing = true;
 
-      this.printerService.printKitchenSales(filteredSales, {
-        sections: ['COMIDA'],
-      });
+    this.salesService.getSalesByClientId('all').subscribe({
+      next: (sales) => {
+        const openSales = (sales ?? []).filter((sale) => sale.status === 'abierta');
+
+        if (!openSales.length) {
+          this.showMessage('No hay ventas abiertas para imprimir.');
+          this.printing = false;
+          return;
+        }
+
+        this.printerService.printOpenSales(openSales);
+        this.printing = false;
+      },
+      error: () => {
+        this.showMessage('No se pudieron cargar las ventas abiertas.');
+        this.printing = false;
+      },
     });
   }
 
@@ -50,6 +62,6 @@ export class HomeComponent {
 
     setTimeout(() => {
       this.message = null;
-    }, 3000); // disappears after 3 seconds
+    }, 3000);
   }
 }

@@ -57,6 +57,10 @@ export class AuthService {
     return clientId != null ? String(clientId) : '';
   }
 
+  getClientName(): string {
+    return this.session?.user.clientName?.trim() ?? '';
+  }
+
   getUserEmail(): string {
     return this.session?.user.email ?? '';
   }
